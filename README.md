@@ -22,7 +22,7 @@ what each setting did.
 ## Install
 
 ```bash
-git clone <this repo> ~/code/local-ai
+git clone https://github.com/khalilgharbaoui/local-ai ~/code/local-ai
 cd ~/code/local-ai
 ./install.sh
 ```

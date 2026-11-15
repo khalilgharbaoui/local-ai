@@ -1,0 +1,8 @@
+{
+  "name": "opencode-local-ai",
+  "version": "0.1.0",
+  "description": "opencode plugin for local-ai: one local model in memory at a time, model lists from the running servers, and a status tool",
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT"
+}

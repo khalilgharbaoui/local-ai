@@ -46,8 +46,24 @@ Add the two providers from [opencode/provider.json](opencode/provider.json) to t
 section of `~/.config/opencode/opencode.json`, then restart opencode. The models show up under
 "Local (llama.cpp)" and "Local (Ollama)" in the model picker.
 
-Use one local model at a time. Fable on llama.cpp stays loaded for 30 minutes after its last
-request and an Ollama model for 5, and two loaded at once can run the GPU out of memory.
+Two 27B models loaded at once run a 48 GB Mac's GPU out of memory, so also load the plugin in
+[opencode-plugin/](opencode-plugin/index.js):
+
+```json
+"plugin": ["file:///path/to/local-ai/opencode-plugin"]
+```
+
+- Before each request to a local model it unloads every other local chat model, on both
+  llama.cpp and Ollama, and waits until the memory is free. A switch takes about half a second
+  on top of loading the new model.
+- It adds every model the two servers report to the `local` and `ollama` providers, so a new
+  section in `models.ini` or a new `ollama pull` shows up in the picker without editing
+  `opencode.json`. Models you define yourself keep your settings.
+- It gives the agent a `local_ai_status` tool: which models are loaded, plus the latest server
+  events and errors. Ask "show the local AI logs".
+
+The provider ids default to `local` and `ollama`; `LOCAL_AI_PROVIDER` and
+`LOCAL_AI_OLLAMA_PROVIDER` change them.
 
 ## Logs
 
@@ -91,6 +107,10 @@ brew services restart ollama
 The stock model: `ollama pull qwen3.8:27b-dflash2-nvfp4`. Fable in Ollama:
 `scripts/ollama-import-fable.sh`, which downloads the full weights (51 GB), converts them to
 NVFP4 and deletes the download.
+
+To pull your Fable build on other machines, publish it to ollama.com: `ollama signin`, then
+`scripts/ollama-push-fable.sh <your ollama.com username>`. It attaches the Apache 2.0 license
+and the credits to the model. Elsewhere: `ollama pull <username>/fable-coder:27b-nvfp4`.
 
 ## On battery
 

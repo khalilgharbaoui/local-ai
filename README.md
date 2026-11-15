@@ -108,7 +108,11 @@ The stock model: `ollama pull qwen3.8:27b-dflash2-nvfp4`. Fable in Ollama:
 `scripts/ollama-import-fable.sh`, which downloads the full weights (51 GB), converts them to
 NVFP4 and deletes the download.
 
-To pull your Fable build on other machines, publish it to ollama.com: `ollama signin`, then
+Or skip the 51 GB download and pull the published build:
+`ollama pull kaygeee/fable-coder:27b-nvfp4`
+([ollama.com/kaygeee/fable-coder](https://ollama.com/kaygeee/fable-coder)).
+
+To publish your own build so you can pull it on other machines: `ollama signin`, then
 `scripts/ollama-push-fable.sh <your ollama.com username>`. It attaches the Apache 2.0 license
 and the credits to the model. Elsewhere: `ollama pull <username>/fable-coder:27b-nvfp4`.
 

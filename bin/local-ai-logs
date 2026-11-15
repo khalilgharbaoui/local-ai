@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Show the local-ai-server service log (oldest rotated file first, then the live one).
+#   local-ai-logs          last 200 lines
+#   local-ai-logs 1000     last 1000 lines
+#   local-ai-logs -f       follow live (Ctrl+C to stop)
+#   local-ai-logs -e       only warnings, errors and keep-awake/start events
+set -euo pipefail
+dir="$HOME/Library/Logs/local-ai-server"
+files=()
+for index in 5 4 3 2 1; do [ -f "$dir/server.log.$index" ] && files+=("$dir/server.log.$index"); done
+[ -f "$dir/server.log" ] && files+=("$dir/server.log")
+[ ${#files[@]} -gt 0 ] || { echo "no logs yet in $dir" >&2; exit 1; }
+
+case "${1:-}" in
+  -f) exec tail -n 50 -F "$dir/server.log" ;;
+  -e) cat "${files[@]}" | grep -a -E ' [EW] |local-ai-server:|GGML_ASSERT|error' | tail -n 200 ;;
+  *)  cat "${files[@]}" | tail -n "${1:-200}" ;;
+esac

@@ -1,0 +1,8 @@
+; Models served by local-ai-server (llama.cpp router). The section name is the model id
+; clients send. install.sh downloads the GGUF and fills in the path.
+[qwen3.8-27b-fable-coder-mtp]
+model = /path/to/Qwen3.8-27B-TurboFCFusion-735-882-Here-Uncen-NEO-CODER-MAX-MTP-IQ4_XS.gguf
+spec-type = draft-mtp
+; medium kept 7/7 on the coding eval with 13% less time than the template default
+; xhigh; low lost a task (2026-11-14).
+reasoning-effort = medium

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- local-ai-server as a login service. install.sh fills in __LABEL__. Idle it holds about
+     0.1 GB; a request loads the model and 30 idle minutes unload it. Logs:
+     ~/Library/Logs/local-ai-server/server.log, rotated at 10 MB with 5 old files kept.
+     Read them with local-ai-logs. Stop: launchctl bootout gui/$UID/__LABEL__ -->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>__LABEL__</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>mkdir -p "$HOME/Library/Logs/local-ai-server"; "$HOME/.local/bin/local-ai-server" 2>&amp;1 | /usr/sbin/rotatelogs -n 5 "$HOME/Library/Logs/local-ai-server/server.log" 10M</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>LOCAL_AI_SERVICE</key>
+        <string>1</string>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    <key>ProcessType</key>
+    <string>Interactive</string>
+</dict>
+</plist>

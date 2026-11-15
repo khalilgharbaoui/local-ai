@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Local OpenAI-compatible model server for opencode's "local" provider
+# (~/.config/opencode/opencode.json): a llama.cpp router on 127.0.0.1:8090 that
+# serves every model in ~/.config/local-ai/models.ini, loaded on demand by the
+# request's model id, one at a time.
+#   local-ai-server
+#   LOCAL_AI_PORT=9000 local-ai-server
+#   LOCAL_AI_CACHE_GB=12 local-ai-server     prompt cache held in memory (default 8)
+#   LOCAL_AI_IDLE_SECONDS=0 local-ai-server  never unload the model (default 1800)
+#   LOCAL_AI_LLAMA=/path/llama-server local-ai-server  another llama.cpp build
+# Extra arguments go to llama-server.
+set -euo pipefail
+
+port="${LOCAL_AI_PORT:-8090}"
+cache_gb="${LOCAL_AI_CACHE_GB:-8}"
+idle_seconds="${LOCAL_AI_IDLE_SECONDS:-1800}"
+# Upstream llama.cpp 1.0.0 (b12383, built from source 2026-11-14) writes Fable about 10%
+# faster than the PrismML fork (MTP accepts 3.3 tokens per step against 2.5). The fork is
+# kept as a fallback: LOCAL_AI_LLAMA=$HOME/.local/opt/llama-prism-b12128/llama-prism-b12128-d7b2896/llama-server
+llama="${LOCAL_AI_LLAMA:-$HOME/.local/opt/llama-upstream-b12383/llama-server}"
+preset="$HOME/.config/local-ai/models.ini"
+cd "${TMPDIR:-/tmp}"
+
+if [ ! -x "$llama" ] || [ ! -f "$preset" ]; then
+  echo "local-ai-server: $llama or $preset is missing" >&2
+  exit 1
+fi
+
+# On battery this Mac runs in Low Power Mode, which makes a 27B model about
+# three times slower. Say so, since it looks like the server hanging.
+if pmset -g batt | grep -q "'Battery Power'" && pmset -g | grep -q -E '^ *(powermode|lowpowermode) +1'; then
+  echo "local-ai-server: on battery in Low Power Mode, expect about 3x slower answers (plug in, or set battery power mode to Automatic)" >&2
+fi
+
+# --sleep-idle-seconds unloads the model after that long without requests and
+# reloads it on the next one (about 9 s). The idle timer restarts with every
+# request. Unloading drops the conversation cache, so the next turn rereads it.
+idle_args=()
+if [ "$idle_seconds" -gt 0 ]; then
+  idle_args=(--sleep-idle-seconds "$idle_seconds")
+fi
+
+# One model loaded at a time keeps RAM free; one slot, so opencode's title
+# request waits instead of sharing the GPU. --ctx-checkpoints keeps hybrid
+# models' state at earlier positions, so a follow-up turn reuses its prompt.
+# Sampling defaults come from each GGUF. caffeinate -i keeps the Mac from
+# idle-sleeping while the server runs: a long answer otherwise stalls when the
+# Mac sleeps (seen 2026-11-14). The display can still sleep, and a closed lid
+# still sleeps the Mac.
+log() { printf '%s local-ai-server: %s\n' "$(date '+%F %T')" "$*" >&2; }
+log "starting: llama=$llama port=$port idle_seconds=$idle_seconds cache_gb=$cache_gb service=${LOCAL_AI_SERVICE:-0}"
+
+# As a login service (LOCAL_AI_SERVICE=1, see launchd/local-ai-server.plist)
+# the server always runs, so keep the Mac awake only while a model is loaded:
+# a background loop holds caffeinate in two-minute steps while the router has a
+# model child, and ends when the server does. Run by hand, caffeinate wraps it.
+launcher=(caffeinate -i)
+if [ "${LOCAL_AI_SERVICE:-0}" = 1 ]; then
+  launcher=()
+  server_pid=$$
+  (
+    awake=0
+    while kill -0 "$server_pid" 2>/dev/null; do
+      if pgrep -f 'llama-server.*--alias' > /dev/null; then
+        [ "$awake" = 1 ] || { log "model loaded, keeping the Mac awake"; awake=1; }
+        caffeinate -i -t 120
+      else
+        [ "$awake" = 0 ] || { log "model unloaded, the Mac may sleep again"; awake=0; }
+        sleep 15
+      fi
+    done
+  ) &
+fi
+
+exec ${launcher[@]+"${launcher[@]}"} "$llama" --models-preset "$preset" --models-max 1 \
+  --host 127.0.0.1 --port "$port" -ngl 99 -fa on -c 131072 -np 1 --jinja \
+  --cache-ram $(( cache_gb * 1024 )) --ctx-checkpoints 32 --cache-idle-slots \
+  ${idle_args[@]+"${idle_args[@]}"} "$@"

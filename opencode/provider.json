@@ -1,0 +1,77 @@
+{
+    "provider": {
+        "local": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "Local (llama.cpp)",
+            "options": {
+                "baseURL": "http://127.0.0.1:8090/v1"
+            },
+            "models": {
+                "qwen3.8-27b-fable-coder-mtp": {
+                    "name": "Qwen3.8 27B Fable Coder (Heretic, MTP)",
+                    "reasoning": true,
+                    "tool_call": true,
+                    "temperature": true,
+                    "limit": {
+                        "context": 131072,
+                        "output": 8192
+                    },
+                    "variants": {
+                        "thinking": {}
+                    }
+                }
+            }
+        },
+        "ollama": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "Local (Ollama)",
+            "options": {
+                "baseURL": "http://127.0.0.1:11434/v1"
+            },
+            "models": {
+                "qwen3.8:27b-dflash2-nvfp4": {
+                    "name": "Qwen3.8 27B (stock, DFlash2)",
+                    "reasoning": true,
+                    "tool_call": true,
+                    "temperature": true,
+                    "limit": {
+                        "context": 131072,
+                        "output": 8192
+                    },
+                    "variants": {
+                        "low": {
+                            "reasoningEffort": "low"
+                        },
+                        "medium": {
+                            "reasoningEffort": "medium"
+                        },
+                        "high": {
+                            "reasoningEffort": "high"
+                        }
+                    }
+                },
+                "fable-coder:27b-nvfp4": {
+                    "name": "Qwen3.8 27B Fable Coder (Ollama, NVFP4)",
+                    "reasoning": true,
+                    "tool_call": true,
+                    "temperature": true,
+                    "limit": {
+                        "context": 131072,
+                        "output": 8192
+                    },
+                    "variants": {
+                        "low": {
+                            "reasoningEffort": "low"
+                        },
+                        "medium": {
+                            "reasoningEffort": "medium"
+                        },
+                        "high": {
+                            "reasoningEffort": "high"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
